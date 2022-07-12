@@ -56,6 +56,13 @@ func (e *InvalidUnmarshalError) Error() string {
 	return "msgpack: Unmarshal(nil " + e.Type.String() + ")"
 }
 
+type InvalidDataError struct {
+	msg    string
+	Offset int64
+}
+
+func (e *InvalidDataError) Error() string { return e.msg }
+
 type errorContext struct {
 	Struct     reflect.Type
 	FieldStack []string
@@ -163,8 +170,11 @@ func step(c byte) int {
 	}
 }
 
-func (d *decodeState) rescanLiteral() {
+func (d *decodeState) rescanLiteral() error {
 	i := d.off
+	if d.off > len(d.data) {
+		return &InvalidDataError{"unexpected end of MessagePack input", int64(d.off)}
+	}
 	c := d.data[i-1]
 	switch c {
 	case 0xc0, 0xc2, 0xc3: // nil, false, true
@@ -195,9 +205,13 @@ func (d *decodeState) rescanLiteral() {
 		}
 	}
 	d.off = i + 1
+	return nil
 }
 
 func (d *decodeState) value(v reflect.Value) error {
+	if d.off > len(d.data) {
+		return &InvalidDataError{"unexpected end of MessagePack input", int64(d.off)}
+	}
 	switch d.opcode {
 	default:
 		panic("MessagePack decoder out of sync")
@@ -211,8 +225,14 @@ func (d *decodeState) value(v reflect.Value) error {
 		}
 	case scanBeginLiteral:
 		start := d.readIndex()
-		d.rescanLiteral()
-		if err := d.literalStore(d.data[start:d.readIndex()], v); err != nil {
+		if err := d.rescanLiteral(); err != nil {
+			return err
+		}
+		end := d.readIndex()
+		if len(d.data) <= end-1 {
+			return &InvalidDataError{"unexpected end of MessagePack input", int64(end - 1)}
+		}
+		if err := d.literalStore(d.data[start:end], v); err != nil {
 			return err
 		}
 	case scanNeverUsed:
@@ -352,7 +372,9 @@ func (d *decodeState) object(v reflect.Value) error {
 		for i := 0; i < n; i++ {
 			// Read key
 			start := d.readIndex()
-			d.rescanLiteral()
+			if err := d.rescanLiteral(); err != nil {
+				return err
+			}
 			item := d.data[start:d.readIndex()]
 			key := string(item[1:])
 			if i, ok := fields.nameIndex[key]; ok {
