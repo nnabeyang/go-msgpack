@@ -442,6 +442,10 @@ func marshalerEncoder(e *encodeState, v reflect.Value) {
 		e.WriteByte(0xd7)
 		e.WriteByte(byte(m.Type()))
 		e.Write(b)
+	case 16: // fixext 16
+		e.WriteByte(0xd8)
+		e.WriteByte(byte(m.Type()))
+		e.Write(b)
 	default:
 		if n <= math.MaxUint8 { // ext 8
 			e.WriteByte(0xc7)

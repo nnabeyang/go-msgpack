@@ -262,6 +262,7 @@ var unmarshalTests = []unmarshalTest{
 	{in: "d5021234", ptr: new(position), out: position{X: 0x12, Y: 0x34}},
 	{in: "d6ff62b2d940", ptr: new(Timestamp), out: Timestamp(time.Date(2022, 6, 22, 8, 56, 32, 0, time.UTC))},
 	{in: "d7ffee6b27fc62b2d940", ptr: new(Timestamp), out: Timestamp(time.Date(2022, 6, 22, 8, 56, 32, 999999999, time.UTC))},
+	{in: "d8050123456789abcdef0123456789abcdef", ptr: new(ext16), out: ext16{0x01, 0x23, 0x45, 0x67, 0x89, 0xab, 0xcd, 0xef, 0x01, 0x23, 0x45, 0x67, 0x89, 0xab, 0xcd, 0xef}},
 	{in: "d90548656c6c6f", ptr: new(string), out: "Hello"},
 	{in: "da000548656c6c6f", ptr: new(string), out: "Hello"},
 	{in: "db0000000548656c6c6f", ptr: new(string), out: "Hello"},

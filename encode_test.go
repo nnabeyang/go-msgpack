@@ -70,6 +70,22 @@ func (p xy) MarshalMsgPack() ([]byte, error) {
 	return []byte{0xff}, nil
 }
 
+type ext16 [16]uint8
+
+func (e *ext16) Type() int8 {
+	return 5
+}
+
+func (e *ext16) MarshalMsgPack() ([]byte, error) {
+	return []byte(e[:]), nil
+}
+func (e *ext16) UnmarshalMsgPack(data []byte) error {
+	var v [16]uint8
+	copy(v[:], data)
+	*e = v
+	return nil
+}
+
 type Optionals struct {
 	Str Pair `msgpack:"pair"`
 	Sta Pair `msgpack:",array"`
@@ -203,6 +219,15 @@ func TestEncodeFixExt(t *testing.T) {
 		v := new(position)
 		data, _ := Marshal(v, false)
 		expect := "d5021234"
+		actual := hex.EncodeToString(data)
+		if actual != expect {
+			t.Errorf("expect '%s' but, got '%s'", expect, actual)
+		}
+	}
+	{ // fixext 16
+		v := &ext16{0x01, 0x23, 0x45, 0x67, 0x89, 0xab, 0xcd, 0xef, 0x01, 0x23, 0x45, 0x67, 0x89, 0xab, 0xcd, 0xef}
+		data, _ := Marshal(v, false)
+		expect := "d8050123456789abcdef0123456789abcdef"
 		actual := hex.EncodeToString(data)
 		if actual != expect {
 			t.Errorf("expect '%s' but, got '%s'", expect, actual)

@@ -180,7 +180,7 @@ func (d *decodeState) rescanLiteral() {
 		i += 1 << (c - 0xcc)
 	case 0xd0, 0xd1, 0xd2, 0xd3: // int8, int16, int32, int64
 		i += 1 << (c - 0xd0)
-	case 0xd4, 0xd5, 0xd6, 0xd7: // fixext 1, fixext 4, fixext 8
+	case 0xd4, 0xd5, 0xd6, 0xd7, 0xd8: // fixext 1, fixext 4, fixext 8, fixext 16
 		i += 1 + (1 << (c - 0xd4))
 	case 0xd9, 0xda, 0xdb: // str8, str16, str32
 		nn := 1 << (c - 0xd9)
@@ -404,7 +404,7 @@ func (d *decodeState) literalStore(item []byte, v reflect.Value) error {
 		}
 		if u, ok := v.Interface().(Unmarshaler); ok {
 			switch c := item[0]; c {
-			case 0xd4, 0xd5, 0xd6, 0xd7: // fixext1, fixext 2, fixext 4, fixext 8
+			case 0xd4, 0xd5, 0xd6, 0xd7, 0xd8: // fixext1, fixext 2, fixext 4, fixext 8
 				if int8(item[1]) == u.Type() {
 					return u.UnmarshalMsgPack(item[2:])
 				}
